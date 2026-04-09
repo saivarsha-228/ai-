@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JSON Reports</title>
+</head>
+<body style="background:black;color:white">
+
+<h2>JSON Report Files</h2>
+
+<ul id="list"></ul>
+
+<script>
+fetch('/api/json-reports')
+.then(res => res.json())
+.then(files => {
+    let list = document.getElementById('list');
+
+    files.forEach(f => {
+        list.innerHTML += `<li><a href="/reports/${f}" target="_blank">${f}</a></li>`;
+    });
+});
+</script>
+
+</body>
+</html>

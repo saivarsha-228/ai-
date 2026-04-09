@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan History</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background:black;color:white">
+
+<h2>SQLite Scan History</h2>
+
+<select id="filter">
+    <option value="ALL">All</option>
+    <option value="HIGH">High</option>
+    <option value="MEDIUM">Medium</option>
+    <option value="LOW">Low</option>
+</select>
+
+<table border="1" id="table">
+<tr>
+<th>ID</th>
+<th>Time</th>
+<th>Score</th>
+<th>Severity</th>
+<th>Complexity</th>
+<th>Download</th>
+</tr>
+</table>
+
+<h3>Risk Trend</h3>
+<canvas id="riskChart" style="max-width:800px;"></canvas>
+
+<script>
+const filter = document.getElementById('filter');
+
+fetch('/api/history')
+.then(res => res.json())
+.then(data => {
+
+    let labels = [];
+    let scores = [];
+
+    function renderTable(selected) {
+        let table = document.getElementById('table');
+
+        table.innerHTML = `
+        <tr>
+        <th>Select</th>
+        <th>ID</th>
+        <th>Time</th>
+        <th>Score</th>
+        <th>Severity</th>
+        <th>Complexity</th>
+        <th>Download</th>
+        </tr>`;
+
+        data.forEach(row => {
+            if (selected === "ALL" || row.severity === selected) {
+
+                table.insertAdjacentHTML("beforeend", `
+                <tr>
+                    <td><input type="checkbox" value='${JSON.stringify(row)}'></td>
+                    <td>${row.id}</td>
+                    <td>${row.timestamp}</td>
+                    <td>${row.risk_score}</td>
+                    <td>${row.severity}</td>
+                    <td>${row.complexity}</td>
+                    <td>
+                        <a href="/${row.file}" target="_blank">
+                        Download
+                        </a>
+                    </td>
+                </tr>`);
+
+                labels.push(row.timestamp);
+                scores.push(row.risk_score * 100);
+            }
+        });
+
+        drawChart(labels, scores);
+    }
+
+    function drawChart(labels, scores) {
+        new Chart(document.getElementById('riskChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Risk %',
+                    data: scores,
+                    fill: false,
+                    tension: 0.3
+                }]
+            }
+        });
+    }
+
+    renderTable("ALL");
+
+    filter.addEventListener('change', () => {
+        labels = [];
+        scores = [];
+        renderTable(filter.value);
+    });
+});
+
+function compareReports() {
+    let selected = document.querySelectorAll("input[type=checkbox]:checked");
+
+    if (selected.length !== 2) {
+        alert("Select exactly 2 reports");
+        return;
+    }
+
+    let r1 = JSON.parse(selected[0].value);
+    let r2 = JSON.parse(selected[1].value);
+
+    document.getElementById('compareResult').innerHTML = `
+    <h3>Comparison</h3>
+    Risk: ${r1.risk_score} vs ${r2.risk_score} <br>
+    Severity: ${r1.severity} vs ${r2.severity} <br>
+    Complexity: ${r1.complexity} vs ${r2.complexity}
+    `;
+}
+</script>
+
+</body>
+</html>
