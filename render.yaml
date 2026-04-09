@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: Ai_crp
+    name: ai_crp
     env: python
     buildCommand: "pip install -r requirements.txt"
     startCommand: "python app.py"
